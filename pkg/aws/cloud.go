@@ -10,6 +10,9 @@ import (
 
 	"github.com/aws/aws-application-networking-k8s/pkg/aws/services"
 	"github.com/aws/aws-application-networking-k8s/pkg/utils/gwlog"
+	"github.com/prometheus/client_golang/prometheus"
+	"sigs.k8s.io/controller-runtime/pkg/metrics"
+	"strconv"
 )
 
 const (
@@ -50,7 +53,17 @@ func NewCloud(log gwlog.Logger, cfg CloudConfig) (Cloud, error) {
 		return nil, err
 	}
 
+	apiCounter := prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "aws_api_call_total",
+			Help: "Number of AWS API calls",
+		},
+		[]string{"name", "status"},
+	)
+	metrics.Registry.MustRegister(apiCounter)
+
 	sess.Handlers.Complete.PushFront(func(r *request.Request) {
+		apiCounter.WithLabelValues(r.Operation.Name, strconv.Itoa(r.HTTPResponse.StatusCode)).Inc()
 		if r.Error != nil {
 			log.Debugw("error",
 				"error", r.Error.Error(),
