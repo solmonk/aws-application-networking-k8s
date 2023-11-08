@@ -12,6 +12,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/arn"
+	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/vpclattice"
 	"github.com/aws/aws-sdk-go/service/vpclattice/vpclatticeiface"
@@ -101,7 +102,6 @@ type defaultLattice struct {
 }
 
 func NewDefaultLattice(sess *session.Session, region string) *defaultLattice {
-	var latticeSess vpclatticeiface.VPCLatticeAPI
 
 	latticeEndpoint := "https://vpc-lattice." + region + ".amazonaws.com"
 	endpoint := os.Getenv("LATTICE_ENDPOINT")
@@ -110,9 +110,9 @@ func NewDefaultLattice(sess *session.Session, region string) *defaultLattice {
 		endpoint = latticeEndpoint
 	}
 
-	latticeSess = vpclattice.New(sess, aws.NewConfig().WithRegion(region).WithEndpoint(endpoint).WithMaxRetries(20))
+	latticeSess := vpclattice.New(sess, aws.NewConfig().WithRegion(region).WithEndpoint(endpoint).WithMaxRetries(20))
 
-	cache := expirable.NewLRU[string, any](1000, nil, time.Second*10)
+	cache := expirable.NewLRU[string, any](1000, nil, time.Second*60)
 
 	return &defaultLattice{latticeSess, latticeSess, cache}
 }
@@ -202,12 +202,6 @@ func (d *defaultLattice) ListServicesAsList(ctx context.Context, input *vpclatti
 }
 
 func (d *defaultLattice) ListTargetGroupsAsList(ctx context.Context, input *vpclattice.ListTargetGroupsInput) ([]*vpclattice.TargetGroupSummary, error) {
-	const cacheKey = "list-target-groups"
-	r, ok := d.cache.Get(cacheKey)
-	if ok {
-		return r.([]*vpclattice.TargetGroupSummary), nil
-	}
-
 	result := []*vpclattice.TargetGroupSummary{}
 
 	err := d.ListTargetGroupsPagesWithContext(ctx, input, func(page *vpclattice.ListTargetGroupsOutput, lastPage bool) bool {
@@ -221,11 +215,10 @@ func (d *defaultLattice) ListTargetGroupsAsList(ctx context.Context, input *vpcl
 		return nil, err
 	}
 
-	d.cache.Add(cacheKey, result)
 	return result, nil
 }
 
-func (d *defaultLattice) ListTagsForResourceWithContext(ctx context.Context, input *vpclattice.ListTagsForResourceInput) (*vpclattice.ListTagsForResourceOutput, error) {
+func (d *defaultLattice) ListTagsForResourceWithContext(ctx context.Context, input *vpclattice.ListTagsForResourceInput, option ...request.Option) (*vpclattice.ListTagsForResourceOutput, error) {
 	key := tagCacheKey(*input.ResourceArn)
 	r, ok := d.cache.Get(key)
 	if ok {
@@ -244,7 +237,7 @@ func tagCacheKey(arn string) string {
 	return "tag-" + arn
 }
 
-func (d *defaultLattice) TagResourceWithContext(ctx context.Context, input *vpclattice.TagResourceInput) (*vpclattice.TagResourceOutput, error) {
+func (d *defaultLattice) TagResourceWithContext(ctx context.Context, input *vpclattice.TagResourceInput, option ...request.Option) (*vpclattice.TagResourceOutput, error) {
 	key := tagCacheKey(*input.ResourceArn)
 	d.cache.Remove(key)
 	return d.client.TagResourceWithContext(ctx, input)

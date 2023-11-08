@@ -53,11 +53,10 @@ func Test_Synthesize(t *testing.T) {
 }
 
 func copy(src tgListOutput) tgListOutput {
-	srcgto := src.getTargetGroupOutput
+	srcgto := src.tgSummary
 	cp := tgListOutput{
-		getTargetGroupOutput: vpclattice.GetTargetGroupOutput{
+		tgSummary: &vpclattice.TargetGroupSummary{
 			Arn:       aws.String(aws.StringValue(srcgto.Arn)),
-			Config:    nil,
 			Id:        aws.String(aws.StringValue(srcgto.Id)),
 			Name:      aws.String(aws.StringValue(srcgto.Name)),
 			Type:      aws.String(aws.StringValue(srcgto.Type)),

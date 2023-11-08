@@ -83,6 +83,7 @@ func (s *defaultTargetGroupManager) create(ctx context.Context, modelTg *model.T
 	createInput.Tags[model.K8SServiceNameKey] = &modelTg.Spec.K8SServiceName
 	createInput.Tags[model.K8SServiceNamespaceKey] = &modelTg.Spec.K8SServiceNamespace
 	createInput.Tags[model.K8SSourceTypeKey] = aws.String(string(modelTg.Spec.K8SSourceType))
+	createInput.Tags[model.K8SProtocolVersionKey] = &modelTg.Spec.ProtocolVersion
 
 	if modelTg.Spec.IsSourceTypeRoute() {
 		createInput.Tags[model.K8SRouteNameKey] = &modelTg.Spec.K8SRouteName
@@ -238,8 +239,8 @@ func (s *defaultTargetGroupManager) Delete(ctx context.Context, modelTg *model.T
 }
 
 type tgListOutput struct {
-	getTargetGroupOutput vpclattice.GetTargetGroupOutput
-	targetGroupTags      *vpclattice.ListTagsForResourceOutput
+	tgSummary       *vpclattice.TargetGroupSummary
+	targetGroupTags *vpclattice.ListTagsForResourceOutput
 }
 
 // Retrieve all TGs in the account, including tags. If individual tags fetch fails, tags will be nil for that tg
@@ -253,16 +254,7 @@ func (s *defaultTargetGroupManager) List(ctx context.Context) ([]tgListOutput, e
 	}
 
 	for _, tg := range resp {
-		tgInput := vpclattice.GetTargetGroupInput{
-			TargetGroupIdentifier: tg.Id,
-		}
-
-		tgOutput, err := lattice.GetTargetGroupWithContext(ctx, &tgInput)
-		if err != nil {
-			continue
-		}
-
-		if tgOutput.Config != nil && aws.StringValue(tgOutput.Config.VpcIdentifier) == config.VpcID {
+		if aws.StringValue(tg.VpcIdentifier) == config.VpcID {
 			tagsInput := vpclattice.ListTagsForResourceInput{
 				ResourceArn: tg.Arn,
 			}
@@ -274,8 +266,8 @@ func (s *defaultTargetGroupManager) List(ctx context.Context) ([]tgListOutput, e
 				tagsOutput = nil
 			}
 			tgOutput := tgListOutput{
-				getTargetGroupOutput: *tgOutput,
-				targetGroupTags:      tagsOutput,
+				tgSummary:       tg,
+				targetGroupTags: tagsOutput,
 			}
 			tgList = append(tgList, tgOutput)
 		}
@@ -362,15 +354,7 @@ func (s *defaultTargetGroupManager) IsTargetGroupMatch(ctx context.Context,
 		return false, nil
 	}
 
-	// one last check - ProtocolVersion is not present on TargetGroupSummary, so we have to do a Get
-	gtgInput := vpclattice.GetTargetGroupInput{TargetGroupIdentifier: latticeTg.Id}
-	gtgOutput, err := s.cloud.Lattice().GetTargetGroupWithContext(ctx, &gtgInput)
-	if err != nil {
-		return false, err
-	}
-
-	pvMatch := aws.StringValue(gtgOutput.Config.ProtocolVersion) == modelTg.Spec.ProtocolVersion
-	return pvMatch, nil
+	return true, nil
 }
 
 // Get default health check configuration according to

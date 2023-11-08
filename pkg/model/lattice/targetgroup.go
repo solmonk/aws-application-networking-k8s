@@ -18,6 +18,7 @@ const (
 	K8SRouteNameKey        = aws.TagBase + "RouteName"
 	K8SRouteNamespaceKey   = aws.TagBase + "RouteNamespace"
 	K8SSourceTypeKey       = aws.TagBase + "SourceTypeKey"
+	K8SProtocolVersionKey  = aws.TagBase + "ProtocolVersion"
 
 	// Service specific tags
 	K8SRouteTypeKey = aws.TagBase + "RouteType"
@@ -51,6 +52,7 @@ type TargetGroupTagFields struct {
 	K8SServiceNamespace string        `json:"k8sservicenamespace"`
 	K8SRouteName        string        `json:"k8sroutename"`
 	K8SRouteNamespace   string        `json:"k8sroutenamespace"`
+	K8SProtocolVersion  string        `json:"k8sprotocolversion"`
 }
 
 type TargetGroupStatus struct {
@@ -80,6 +82,7 @@ func TGTagFieldsFromTags(tags map[string]*string) TargetGroupTagFields {
 		K8SServiceNamespace: getMapValue(tags, K8SServiceNamespaceKey),
 		K8SRouteName:        getMapValue(tags, K8SRouteNameKey),
 		K8SRouteNamespace:   getMapValue(tags, K8SRouteNamespaceKey),
+		K8SProtocolVersion:  getMapValue(tags, K8SProtocolVersionKey),
 	}
 }
 
@@ -109,15 +112,7 @@ func GetParentRefType(s string) K8SSourceType {
 }
 
 func TagFieldsMatch(spec TargetGroupSpec, tags TargetGroupTagFields) bool {
-	specTags := TargetGroupTagFields{
-		K8SClusterName:      spec.K8SClusterName,
-		K8SSourceType:       spec.K8SSourceType,
-		K8SServiceName:      spec.K8SServiceName,
-		K8SServiceNamespace: spec.K8SServiceNamespace,
-		K8SRouteName:        spec.K8SRouteName,
-		K8SRouteNamespace:   spec.K8SRouteNamespace,
-	}
-	return reflect.DeepEqual(specTags, tags)
+	return reflect.DeepEqual(spec.TargetGroupTagFields, tags)
 }
 
 func NewTargetGroup(stack core.Stack, spec TargetGroupSpec) (*TargetGroup, error) {

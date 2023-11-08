@@ -361,6 +361,7 @@ func (t *backendRefTargetGroupModelBuildTask) buildTargetGroupSpec(ctx context.C
 	spec.K8SServiceNamespace = backendRefNsName.Namespace
 	spec.K8SRouteName = t.route.Name()
 	spec.K8SRouteNamespace = t.route.Namespace()
+	spec.K8SProtocolVersion = protocolVersion
 
 	return spec, nil
 }
