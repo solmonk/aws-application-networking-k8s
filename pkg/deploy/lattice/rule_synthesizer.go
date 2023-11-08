@@ -97,10 +97,10 @@ func (r *ruleSynthesizer) findSvcExportTG(ctx context.Context, svcImportTg model
 
 		clusterMatch := (svcImportTg.K8SClusterName == "") || (tgTags.K8SClusterName == svcImportTg.K8SClusterName)
 
-		vpcMatch := (svcImportTg.VpcId == "") || (svcImportTg.VpcId == aws.StringValue(tg.getTargetGroupOutput.Config.VpcIdentifier))
+		vpcMatch := (svcImportTg.VpcId == "") || (svcImportTg.VpcId == aws.StringValue(tg.tgSummary.VpcIdentifier))
 
 		if svcMatch && clusterMatch && vpcMatch {
-			return *tg.getTargetGroupOutput.Id, nil
+			return *tg.tgSummary.Id, nil
 		}
 	}
 
