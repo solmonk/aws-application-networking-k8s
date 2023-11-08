@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws/awserr"
+	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/hashicorp/golang-lru/v2/expirable"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -101,8 +102,6 @@ type defaultLattice struct {
 }
 
 func NewDefaultLattice(sess *session.Session, region string) *defaultLattice {
-	var latticeSess vpclatticeiface.VPCLatticeAPI
-
 	latticeEndpoint := "https://vpc-lattice." + region + ".amazonaws.com"
 	endpoint := os.Getenv("LATTICE_ENDPOINT")
 
@@ -110,7 +109,7 @@ func NewDefaultLattice(sess *session.Session, region string) *defaultLattice {
 		endpoint = latticeEndpoint
 	}
 
-	latticeSess = vpclattice.New(sess, aws.NewConfig().WithRegion(region).WithEndpoint(endpoint).WithMaxRetries(20))
+	latticeSess := vpclattice.New(sess, aws.NewConfig().WithRegion(region).WithEndpoint(endpoint).WithMaxRetries(20))
 
 	cache := expirable.NewLRU[string, any](1000, nil, time.Second*10)
 
@@ -225,7 +224,7 @@ func (d *defaultLattice) ListTargetGroupsAsList(ctx context.Context, input *vpcl
 	return result, nil
 }
 
-func (d *defaultLattice) ListTagsForResourceWithContext(ctx context.Context, input *vpclattice.ListTagsForResourceInput) (*vpclattice.ListTagsForResourceOutput, error) {
+func (d *defaultLattice) ListTagsForResourceWithContext(ctx context.Context, input *vpclattice.ListTagsForResourceInput, _ ...request.Option) (*vpclattice.ListTagsForResourceOutput, error) {
 	key := tagCacheKey(*input.ResourceArn)
 	r, ok := d.cache.Get(key)
 	if ok {
@@ -244,7 +243,7 @@ func tagCacheKey(arn string) string {
 	return "tag-" + arn
 }
 
-func (d *defaultLattice) TagResourceWithContext(ctx context.Context, input *vpclattice.TagResourceInput) (*vpclattice.TagResourceOutput, error) {
+func (d *defaultLattice) TagResourceWithContext(ctx context.Context, input *vpclattice.TagResourceInput, _ ...request.Option) (*vpclattice.TagResourceOutput, error) {
 	key := tagCacheKey(*input.ResourceArn)
 	d.cache.Remove(key)
 	return d.client.TagResourceWithContext(ctx, input)
