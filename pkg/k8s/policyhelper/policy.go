@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"reflect"
 	"strings"
 
 	"golang.org/x/exp/slices"
@@ -199,10 +200,10 @@ type PolicyHandlerConfig struct {
 // P and PL are reference types and should derive from T and TL. P and PL do not require explicit declaration. For example:
 //
 //	ph := NewPolicyHandler[IAMAuthPolicy, IAMAuthPolicyList](cfg)
-func NewPolicyHandler[T, TL any, P policyPtr[T], PL policyListPtr[TL, P]](cfg PolicyHandlerConfig) *PolicyHandler[P] {
+func NewPolicyHandler[P Policy, PL PolicyList[P]](cfg PolicyHandlerConfig) *PolicyHandler[P] {
 	ph := &PolicyHandler[P]{
 		log:    cfg.Log,
-		client: newK8sPolicyClient[T, TL, P, PL](cfg.Client),
+		client: newK8sPolicyClient[P, PL](cfg.Client),
 		kinds:  cfg.TargetRefKinds,
 	}
 	return ph
@@ -216,36 +217,26 @@ type PolicyClient[P Policy] interface {
 	UpdateStatus(ctx context.Context, policy P) error
 }
 
-type policyPtr[T any] interface {
-	Policy
-	*T
-}
-
-type policyListPtr[T any, P Policy] interface {
-	PolicyList[P]
-	*T
-}
-
 // k8s client based implementation of PolicyClient
-type k8sPolicyClient[T, U any, P policyPtr[T], PL policyListPtr[U, P]] struct {
+type k8sPolicyClient[P Policy, PL PolicyList[P]] struct {
 	client k8sclient.Client
 }
 
-func newK8sPolicyClient[T, U any, P policyPtr[T], PL policyListPtr[U, P]](c k8sclient.Client) *k8sPolicyClient[T, U, P, PL] {
-	return &k8sPolicyClient[T, U, P, PL]{client: c}
+func newK8sPolicyClient[P Policy, PL PolicyList[P]](c k8sclient.Client) *k8sPolicyClient[P, PL] {
+	return &k8sPolicyClient[P, PL]{client: c}
 }
 
-func (pc *k8sPolicyClient[T, U, P, PL]) newList() PL {
-	var u U
-	return &u
+func (pc *k8sPolicyClient[P, PL]) newList() PL {
+	nilp := *new(PL)
+	return reflect.New(reflect.TypeOf(nilp).Elem()).Interface().(PL)
 }
 
-func (pc *k8sPolicyClient[T, U, P, PL]) newPolicy() P {
-	var t T
-	return &t
+func (pc *k8sPolicyClient[P, PL]) newPolicy() P {
+	nilp := *new(P)
+	return reflect.New(reflect.TypeOf(nilp).Elem()).Interface().(P)
 }
 
-func (pc *k8sPolicyClient[T, U, P, PL]) List(ctx context.Context, namespace string) ([]P, error) {
+func (pc *k8sPolicyClient[P, PL]) List(ctx context.Context, namespace string) ([]P, error) {
 	l := pc.newList()
 	opts := &k8sclient.ListOptions{}
 	if namespace != "" { // policies suppose to be namespaced
@@ -258,13 +249,13 @@ func (pc *k8sPolicyClient[T, U, P, PL]) List(ctx context.Context, namespace stri
 	return l.GetItems(), nil
 }
 
-func (pc *k8sPolicyClient[T, U, P, PL]) Get(ctx context.Context, nsname types.NamespacedName) (P, error) {
+func (pc *k8sPolicyClient[P, PL]) Get(ctx context.Context, nsname types.NamespacedName) (P, error) {
 	p := pc.newPolicy()
 	err := pc.client.Get(ctx, nsname, p)
 	return p, err
 }
 
-func (pc *k8sPolicyClient[T, U, P, PL]) TargetRefObj(ctx context.Context, p P) (k8sclient.Object, error) {
+func (pc *k8sPolicyClient[P, PL]) TargetRefObj(ctx context.Context, p P) (k8sclient.Object, error) {
 	tr := p.GetTargetRef()
 	obj := GroupKindObj(TargetRefGroupKind(tr))
 	key := types.NamespacedName{
@@ -278,7 +269,7 @@ func (pc *k8sPolicyClient[T, U, P, PL]) TargetRefObj(ctx context.Context, p P) (
 	return obj, nil
 }
 
-func (pc *k8sPolicyClient[T, U, P, PL]) UpdateStatus(ctx context.Context, policy P) error {
+func (pc *k8sPolicyClient[P, PL]) UpdateStatus(ctx context.Context, policy P) error {
 	return pc.client.Status().Update(ctx, policy)
 }
 

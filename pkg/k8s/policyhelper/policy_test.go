@@ -245,19 +245,19 @@ func TestConflictResolutionSort(t *testing.T) {
 }
 
 func TestPolicyClient(t *testing.T) {
-	type iap = anv1alpha1.IAMAuthPolicy
-	type iapl = anv1alpha1.IAMAuthPolicyList
+	type iap = *anv1alpha1.IAMAuthPolicy
+	type iapl = *anv1alpha1.IAMAuthPolicyList
 
 	t.Run("new list and policy", func(t *testing.T) {
 		c := newK8sPolicyClient[iap, iapl](nil)
-		assert.NotNil(t, c.newPolicy())
-		assert.NotNil(t, c.newList())
+		assert.Equal(t, &anv1alpha1.IAMAuthPolicy{}, c.newPolicy())
+		assert.Equal(t, &anv1alpha1.IAMAuthPolicyList{}, c.newList())
 	})
 }
 
 func TestPolicyHandler(t *testing.T) {
-	type iap = anv1alpha1.IAMAuthPolicy
-	type iapl = anv1alpha1.IAMAuthPolicyList
+	type iap = *anv1alpha1.IAMAuthPolicy
+	type iapl = *anv1alpha1.IAMAuthPolicyList
 
 	phcfg := PolicyHandlerConfig{}
 	_ = NewPolicyHandler[iap, iapl](phcfg)

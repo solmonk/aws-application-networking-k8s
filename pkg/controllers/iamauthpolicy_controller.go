@@ -30,15 +30,15 @@ const (
 )
 
 type (
-	IAP  = anv1alpha1.IAMAuthPolicy
-	IAPL = anv1alpha1.IAMAuthPolicyList
+	IAP  = *anv1alpha1.IAMAuthPolicy
+	IAPL = *anv1alpha1.IAMAuthPolicyList
 )
 
 type IAMAuthPolicyController struct {
 	log    gwlog.Logger
 	client client.Client
 	pm     *deploy.IAMAuthPolicyManager
-	ph     *policy.PolicyHandler[*IAP]
+	ph     *policy.PolicyHandler[IAP]
 	cloud  pkg_aws.Cloud
 }
 
