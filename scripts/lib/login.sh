@@ -26,14 +26,6 @@ perform_docker_and_helm_login() {
   fi
 }
 
-perform_docker_and_helm_login() {
-  #ecr-public only exists in us-east-1 so use that region specifically
-  local __pw=$(aws ecr-public get-login-password --region us-east-1)
-  echo "$__pw" | docker login -u AWS --password-stdin public.ecr.aws
-  export HELM_EXPERIMENTAL_OCI=1
-  echo "$__pw" | helm registry login -u AWS --password-stdin public.ecr.aws
-}
-
 ensure_binaries() {
     check_is_installed "aws"
     check_is_installed "docker"
