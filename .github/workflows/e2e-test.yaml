@@ -41,7 +41,7 @@ jobs:
         run: eksctl utils write-kubeconfig --cluster=$CLUSTER_NAME
       - name: Build and push image
         run: |
-          SKIP_BUILD_CHART=1 VERSION=$GITHUB_SHA scripts/release_controller.sh
+          SKIP_BUILD_CHART=1 VERSION=$GITHUB_SHA scripts/release-controller.sh
       - name: Install helm chart
         run: |
           helm install gateway-api-controller ./helm \
