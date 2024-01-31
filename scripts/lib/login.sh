@@ -19,7 +19,7 @@ perform_docker_and_helm_login() {
     export HELM_EXPERIMENTAL_OCI=1
     echo "$__pw" | helm registry login -u AWS --password-stdin public.ecr.aws
   else
-    local __pw=$(aws ecr get-login-password --region $aws_region)
+    local __pw=$(aws ecr get-login-password)
     echo "$__pw" | docker login --username AWS --password-stdin $registry_url
     export HELM_EXPERIMENTAL_OCI=1
     echo "$__pw" | helm registry login -u AWS --password-stdin $registry_url
