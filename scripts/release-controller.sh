@@ -80,6 +80,7 @@ if [[ "$SKIP_BUILD_IMAGE" != "1" ]]; then
 
   # build controller image
   if [[ $CI = "true" ]]; then
+    echo "cached"
     docker buildx build -t "$IMG" \
       -f "$CONTROLLER_IMAGE_DOCKERFILE_PATH" \
       --build-arg service_controller_git_version="$VERSION" \
