@@ -74,25 +74,30 @@ if [[ "$SKIP_BUILD_IMAGE" != "1" ]]; then
   DOCKER_BUILD_CONTEXT="$WORKSPACE_DIR"
 
   if [[ $QUIET = "false" ]]; then
-      echo "building aws-gateway-controller image with tag: ${IMG}"
+      echo "building and pushing aws-gateway-controller image with tag: ${IMG}"
       echo " git commit: $CONTROLLER_GIT_COMMIT"
   fi
 
   # build controller image
-  docker buildx build -t "$IMG" \
-    -f "$CONTROLLER_IMAGE_DOCKERFILE_PATH" \
-    --build-arg service_controller_git_version="$VERSION" \
-    --build-arg service_controller_git_commit="$CONTROLLER_GIT_COMMIT" \
-    --build-arg build_date="$BUILD_DATE" \
-    "${DOCKER_BUILD_CONTEXT}"
-
-  if [ $? -ne 0 ]; then
-    exit 2
+  if [[ $CI = "true" ]]; then
+    docker buildx build -t "$IMG" \
+      -f "$CONTROLLER_IMAGE_DOCKERFILE_PATH" \
+      --build-arg service_controller_git_version="$VERSION" \
+      --build-arg service_controller_git_commit="$CONTROLLER_GIT_COMMIT" \
+      --build-arg build_date="$BUILD_DATE" \
+      --cache-from type=gha \
+      --cache-to type=gha,mode=max \
+      --push \
+      "${DOCKER_BUILD_CONTEXT}"
+  else
+    docker buildx build -t "$IMG" \
+      -f "$CONTROLLER_IMAGE_DOCKERFILE_PATH" \
+      --build-arg service_controller_git_version="$VERSION" \
+      --build-arg service_controller_git_commit="$CONTROLLER_GIT_COMMIT" \
+      --build-arg build_date="$BUILD_DATE" \
+      --push \
+      "${DOCKER_BUILD_CONTEXT}"
   fi
-
-  echo "Pushing aws-gateway-controller image with tag: ${IMG}"
-
-  docker push "${IMG}"
 
   if [ $? -ne 0 ]; then
     exit 2
