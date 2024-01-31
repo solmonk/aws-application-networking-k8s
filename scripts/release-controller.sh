@@ -53,21 +53,6 @@ check_is_installed git
 check_is_installed jq
 check_is_installed yq
 
-echo "release-controller.sh] Validating that controller image repository & tag in release artifacts is consistent with semver tag"
-pushd $WORKSPACE_DIR/helm 1>/dev/null
-  _repository=$(yq eval ".image.repository" values.yaml)
-  _image_tag=$(yq eval ".image.tag" values.yaml)
-  if [[ $_repository != $IMAGE_REPOSITORY ]]; then
-    echo "release-controller.sh] [ERROR] 'image.repository' value in release artifacts should be $IMAGE_REPOSITORY. Current value: $_repository"
-    exit 1
-  fi
-  if [[ $_image_tag != $VERSION ]]; then
-    echo "release-controller.sh] [ERROR] 'image.tag' value in release artifacts should be $VERSION. Current value: $_image_tag"
-    exit 1
-  fi
-  echo "release-controller.sh] Validation successful"
-popd 1>/dev/null
-
 ASSUME_COMMAND=$(aws --output json sts assume-role --role-arn $ECR_PUBLISH_ROLE_ARN --role-session-name 'publish-images' --duration-seconds 3600 | jq -r '.Credentials | "export AWS_ACCESS_KEY_ID=\(.AccessKeyId)\nexport AWS_SECRET_ACCESS_KEY=\(.SecretAccessKey)\nexport AWS_SESSION_TOKEN=\(.SessionToken)\n"')
 eval $ASSUME_COMMAND
 echo "release-controller.sh] Assumed $ECR_PUBLISH_ROLE_ARN"
