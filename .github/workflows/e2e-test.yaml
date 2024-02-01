@@ -14,7 +14,7 @@ jobs:
       AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
       IMAGE_REPOSITORY: ${{ secrets.PRIVATE_IMAGE_REPOSITORY }}
       ECR_PUBLISH_ROLE_ARN: ${{ secrets.ECR_PUBLISH_IAM_ROLE }}
-      COMMIT_SHA: ${{ github.event.pull_request.head.sha || env.GITHUB_SHA }}
+      COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
 
       # E2E integration test config
       REGION: ${{ secrets.AWS_DEFAULT_REGION }}
