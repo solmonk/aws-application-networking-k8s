@@ -51,6 +51,9 @@ jobs:
              --set=image.repository=$IMAGE_REPOSITORY \
              --set=image.tag=$GITHUB_SHA \
              --set=log.level=debug
+      - name: Install v1 CRDs
+        run: |
+          kubectl apply -f config/crds/bases/k8s-gateway-v1.0.0.yaml
       - name: Run test
         run: |
           FOCUS="HTTPRoute Creation" make e2e-test
