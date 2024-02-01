@@ -12,6 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+      REGION: ${{ secrets.AWS_DEFAULT_REGION }}
       CLUSTER_NAME: ${{ secrets.CLUSTER_NAME }}
       CLUSTER_VPC_ID: ${{ secrets.CLUSTER_VPC_ID }}
       IMAGE_REPOSITORY: ${{ secrets.PRIVATE_IMAGE_REPOSITORY }}
