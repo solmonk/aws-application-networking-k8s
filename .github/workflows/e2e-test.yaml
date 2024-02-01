@@ -55,6 +55,9 @@ jobs:
       - name: Install v1 CRDs
         run: |
           kubectl apply -f config/crds/bases/k8s-gateway-v1.0.0.yaml
+      - name: Install GatewayClass
+        run: |
+          kubectl apply -f examples/gatewayclass.yaml
       - name: Run test
         run: |
           FOCUS="HTTPRoute Creation" make e2e-test
