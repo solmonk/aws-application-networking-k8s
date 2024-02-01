@@ -6,6 +6,7 @@ on:
   push:
     branches:
       - main
+  pull_request:
 jobs:
   e2e-test:
     runs-on: ubuntu-latest
@@ -35,7 +36,7 @@ jobs:
         run: |
           curl -sL "https://github.com/eksctl-io/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
           sudo mv /tmp/eksctl /usr/local/bin
-      # if CLUSTER_NAME exists - do not create cluster.
+      # if CLUSTER_NAME exists - use it instead.
       # TODO: create cluster if it does not exist.
       - name: Get cluster credentials
         run: eksctl utils write-kubeconfig --cluster=$CLUSTER_NAME
@@ -51,7 +52,13 @@ jobs:
              --set=image.tag=$GITHUB_SHA \
              --set=log.level=debug
       - name: Run test
-        run: kubectl get pods -A
-      - name: Uninstall helm chart
         run: |
-          helm uninstall gateway-api-controller --namespace aws-application-networking-system
+          FOCUS="HTTPRoute Creation" make e2e-test
+      - name: Cleanup
+        if: always()
+        run: |
+          make e2e-clean
+      - name: Uninstall helm chart
+        if: always()
+        run: |
+          helm uninstall gateway-api-controller --namespace aws-application-networking-system || true
