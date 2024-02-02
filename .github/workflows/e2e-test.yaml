@@ -9,6 +9,7 @@ jobs:
   e2e-test:
     runs-on: ubuntu-latest
     timeout-minutes: 240
+    environment: e2e-test
     env:
       # Image build config
       AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
