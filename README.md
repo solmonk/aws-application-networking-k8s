@@ -1,5 +1,6 @@
 # AWS Gateway API Controller for VPC Lattice
 
+
 <p align="center">
     <img src="docs/images/kubernetes_icon.svg" alt="Kubernetes logo" width="100" /> 
     <img src="docs/images/controller.png" alt="AWS Load Balancer logo" width="100" />
