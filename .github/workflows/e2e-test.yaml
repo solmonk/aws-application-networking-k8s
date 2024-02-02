@@ -68,7 +68,7 @@ jobs:
           kubectl apply -f examples/gatewayclass.yaml
       - name: Run test
         run: |
-          FOCUS="Access Log Policy" make e2e-test
+          FOCUS="RAM Share" make e2e-test
       - name: Cleanup
         if: always()
         run: |
